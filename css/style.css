@@ -1,0 +1,73 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    padding: 30px;
+}
+
+svg {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+select {
+    width: 200px;
+    height: 30px;
+    padding: 5px;
+    font-size: 16px;
+}
+
+.line {
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+.annotation text {
+    font-size: 13px;
+    fill: darkred;
+}
+
+.annotation .title {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.annotation .note-line {
+    stroke: darkred;
+    stroke-width: 1;
+    fill: none;
+}
+
+.annotation .connector {
+    stroke: darkred;
+    stroke-dasharray: 2,2;
+    fill: none;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: #f9f9f9;
+    padding: 5px;
+    border: 1px solid #dcdcdc;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: #f9f9f9;
+    padding: 5px;
+    border: 1px solid #dcdcdc;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}

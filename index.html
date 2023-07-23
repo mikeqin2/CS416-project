@@ -1,30 +1,195 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Series Line Chart</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    select {
-      font-size: 16px;
-    }
-  </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-svg-annotation@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #444;
+            text-align: center;
+            padding: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 20px 0 10px 0;
+        }
+
+        select {
+            display: block;
+            width: 200px;
+            margin: auto;
+            padding: 10px;
+            font-size: 18px;
+        }
+
+        svg {
+            display: block;
+            margin: auto;
+            background-color: #fff;
+            border: 1px solid #ddd;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+        }
+    </style>
 </head>
 <body>
-  <h1>Time Series Line Chart</h1>
-  <div>
-    <label for="countrySelect">Select a Country:</label>
-    <select id="countrySelect">
-      <!-- Dropdown options will be populated dynamically -->
-    </select>
-  </div>
-  <div id="chartContainer"></div>
+    <h1>COVID-19 Cases by Country (2020-2021)</h1>
+    <label for="countrySelect">Select a country:</label>
+    <select id="countrySelect"></select>
+    <svg width="600" height="400"></svg>
+    <script>
+        d3.csv("data/covid.csv").then(data => {
+            // Parse the date values to a Date object
+            let parseDate = d3.timeParse("%Y-%m-%d");
+            data.forEach(function(d) {
+                d.date = parseDate(d.date);
+                for (let country in d) {
+                    if (country !== "date") d[country] = +d[country];
+                }
+            });
 
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="test.js"></script>
+            // Define the margins and dimensions of the graph
+            let margin = {top: 20, right: 20, bottom: 30, left: 50};
+            let width = 600 - margin.left - margin.right;
+            let height = 400 - margin.top - margin.bottom;
+
+            // Create the x and y scales
+            let x = d3.scaleTime().range([0, width]);
+            let y = d3.scaleLinear().range([height, 0]);
+
+            // Define the line
+            let valueline = d3.line()
+                .x(function(d) { return x(d.date); });
+
+            // Create the SVG 'g' element (a group element)
+            let svg = d3.select("svg").append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Add the X Axis
+            let xAxis = svg.append("g")
+                .attr("transform", "translate(0," + height + ")");
+
+            // Add the Y Axis
+            let yAxis = svg.append("g")
+                .call(d3.axisLeft(y).tickFormat(d3.format(".0s")));
+
+            // Add the dropdown menu
+            let countries = data.columns.filter(c => c !== "date");
+            let dropdown = d3.select("#countrySelect");
+            dropdown.selectAll("option")
+                .data(countries)
+                .enter()
+                .append("option")
+                .attr("value", d => d)
+                .text(d => d);
+
+            // Create a tooltip
+            let tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip");
+
+            // Tooltip functions
+            let mouseover = function(event, d) {
+                tooltip
+                    .style("opacity", 1)
+                    .html("Date: " + d3.timeFormat("%Y-%m-%d")(d.date) + "<br>" + "Cases: " + d[dropdown.node().value]);
+            }
+            let mousemove = function(event, d) {
+                tooltip
+                    .style("left", (event.pageX + 20) + "px")
+                    .style("top", (event.pageY) + "px");
+            }
+            let mouseout = function(d) {
+                tooltip
+                    .style("opacity", 0);
+            }
+
+            // Function to update the chart
+            function updateChart(country) {
+                valueline.y(function(d) { return y(d[country]); });
+
+                x.domain(d3.extent(data, function(d) { return d.date; }));
+                y.domain([0, d3.max(data, function(d) { return d[country]; })]);
+
+                xAxis.call(d3.axisBottom(x));
+                yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".0s")));
+
+                let path = svg.selectAll(".line").data([data]);
+
+                path.enter().append("path")
+                    .attr("class", "line")
+                    .merge(path)
+                    .attr("fill", "none")
+                    .attr("stroke", "steelblue")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", valueline);
+
+                path.exit().remove();
+
+                // Remove existing dots before creating new ones
+                svg.selectAll(".dot").remove();
+
+                let dots = svg.selectAll(".dot")
+                    .data(data);
+
+                dots.enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", function(d) { return x(d.date) })
+                    .attr("cy", function(d) { return y(d[country]) })
+                    .attr("r", 5)
+                    .style("fill", "steelblue")
+                    .on("mouseover", mouseover)
+                    .on("mousemove", mousemove)
+                    .on("mouseout", mouseout);
+
+                svg.selectAll("g.annotation").remove();
+
+                if (country === "World") {
+                    const annotations = [{
+                        note: {
+                            label: "The covid cases for the entire world have been going steadily since the beginning",
+                            title: "Note for " + country
+                        },
+                        x: x(data[0].date),
+                        y: y(data[0][country]),
+                        dy: -30,
+                        dx: 0
+                    }];
+
+                    const makeAnnotations = d3.annotation()
+                        .annotations(annotations);
+
+                    svg.append("g")
+                        .attr("class", "annotation")
+                        .call(makeAnnotations);
+                }
+            }
+
+            // Initialize with the first country
+            updateChart(countries[0]);
+
+            // Update the chart when a new country is selected
+            dropdown.on("change", function() {
+                updateChart(this.value);
+            });
+        });
+    </script>
 </body>
 </html>
