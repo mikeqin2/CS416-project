@@ -55,6 +55,10 @@
     <label for="countrySelect">Select a country:</label>
     <select id="countrySelect"></select>
     <svg width="600" height="400"></svg>
+    <div class="sidebar">
+        <h2>About COVID-19</h2>
+        <p>The COVID-19 pandemic, also known as the coronavirus pandemic, is an ongoing global pandemic of coronavirus disease 2019 (COVID-19), caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2). The virus was first identified in December 2019 in Wuhan, China. The World Health Organization declared a Public Health Emergency of International Concern regarding COVID-19 on 30 January 2020, and later declared a pandemic on 11 March 2020. As of the end of 2021, more than 200 million cases have been confirmed, with more than 4 million confirmed deaths across nearly every country in the world, leading to widespread disruptions in travel and economic activity.</p>
+    </div>    
     <script>
         d3.csv("data/covid.csv").then(data => {
             // Parse the date values to a Date object
@@ -165,6 +169,42 @@
                     const annotations = [{
                         note: {
                             label: "The covid cases for the entire world have been going steadily since the beginning",
+                            title: "Note for " + country
+                        },
+                        x: x(data[0].date),
+                        y: y(data[0][country]),
+                        dy: -30,
+                        dx: 0
+                    }];
+
+                    const makeAnnotations = d3.annotation()
+                        .annotations(annotations);
+
+                    svg.append("g")
+                        .attr("class", "annotation")
+                        .call(makeAnnotations);
+                } else if (country === "China") {
+                    const annotations = [{
+                        note: {
+                            label: "As the origin of the pandemic, China's covid cases escalated in the early 2020 but slowly tapered off.",
+                            title: "Note for " + country
+                        },
+                        x: x(data[0].date),
+                        y: y(data[0][country]),
+                        dy: -30,
+                        dx: 100
+                    }];
+
+                    const makeAnnotations = d3.annotation()
+                        .annotations(annotations);
+
+                    svg.append("g")
+                        .attr("class", "annotation")
+                        .call(makeAnnotations);
+                } else if (country === "United States") {
+                    const annotations = [{
+                        note: {
+                            label: "Covid cases in the US saw an uprising since the end of 2020 into the beginning of 2021.",
                             title: "Note for " + country
                         },
                         x: x(data[0].date),
