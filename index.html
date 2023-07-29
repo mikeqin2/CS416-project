@@ -51,16 +51,46 @@
     </style>
 </head>
 <body>
-    <h1>COVID-19 Cases by Country (2020-2021)</h1>
-    <label for="countrySelect">Select a country:</label>
-    <select id="countrySelect"></select>
-    <svg width="600" height="400"></svg>
     <div class="sidebar">
         <h2>About COVID-19</h2>
-        <p>The COVID-19 pandemic, also known as the coronavirus pandemic, is an ongoing global pandemic of coronavirus disease 2019 (COVID-19), caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2). The virus was first identified in December 2019 in Wuhan, China. The World Health Organization declared a Public Health Emergency of International Concern regarding COVID-19 on 30 January 2020, and later declared a pandemic on 11 March 2020. As of the end of 2021, more than 200 million cases have been confirmed, with more than 4 million confirmed deaths across nearly every country in the world, leading to widespread disruptions in travel and economic activity.</p>
+        <p>Also referred to as the coronavirus pandemic, the continuing worldwide spread of the COVID-19 disease, triggered by the SARS-CoV-2 virus, has significantly affected global health. The outbreak of this virus was initially detected in Wuhan, China, in the last month of 2019. The seriousness of this viral spread led the World Health Organization to announce a Public Health Emergency of International Concern in relation to COVID-19 at the end of January 2020, which was further escalated to a global pandemic declaration on March 11, 2020. By the close of 2021, the virus had resulted in over 200 million confirmed infections and caused more than 4 million deaths in almost all nations worldwide, provoking profound interruptions in both travel and economic operations.</p>
+    </div>  
+    
+    <div>
+        <a href="#totalCasesChart">View Total Cases Chart</a> | <a href="#totalDeathsChart">View Total Deaths Chart</a> | <a href="#newCasesChart">View New Cases Chart</a> | <a href="#newDeathsChart">View New Deaths Chart</a>
     </div>    
+
+    <div id="totalCasesChart">
+        <h1>COVID-19 Cumulative Cases by Country (2020-2021)</h1>
+        <label for="countrySelect">Select a country:</label>
+        <select id="countrySelect"></select>
+        <svg width="600" height="400"></svg>
+    </div>
+
+    <div id="totalDeathsChart">
+        <h1>COVID-19 Cumulative Deaths by Country (2020-2021)</h1>
+        <label for="countrySelectDeath">Select a country:</label>
+        <select id="countrySelectDeath"></select>
+        <svg id="deathSvg" width="600" height="400"></svg>
+    </div>
+
+    <div id="newCasesChart">
+        <h1>COVID-19 New Cases by Country (2020-2021)</h1>
+        <label for="countrySelectNewCases">Select a country:</label>
+        <select id="countrySelectNewCases"></select>
+        <svg id="newCaseSvg" width="600" height="400"></svg>
+    </div>
+
+    <div id="newDeathsChart">
+        <h1>COVID-19 New Deaths by Country (2020-2021)</h1>
+        <label for="countrySelectNewDeaths">Select a country:</label>
+        <select id="countrySelectNewDeaths"></select>
+        <svg id="newDeathSvg" width="600" height="400"></svg>
+    </div>
+
+    
     <script>
-        d3.csv("data/covid.csv").then(data => {
+        d3.csv("data/total_cases.csv").then(data => {
             // Parse the date values to a Date object
             let parseDate = d3.timeParse("%Y-%m-%d");
             data.forEach(function(d) {
@@ -71,7 +101,7 @@
             });
 
             // Define the margins and dimensions of the graph
-            let margin = {top: 20, right: 20, bottom: 30, left: 50};
+            let margin = {top: 20, right: 20, bottom: 30, left: 70};
             let width = 600 - margin.left - margin.right;
             let height = 400 - margin.top - margin.bottom;
 
@@ -93,7 +123,7 @@
 
             // Add the Y Axis
             let yAxis = svg.append("g")
-                .call(d3.axisLeft(y).tickFormat(d3.format(".0s")));
+                .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
 
             // Add the dropdown menu
             let countries = data.columns.filter(c => c !== "date");
@@ -133,7 +163,7 @@
                 y.domain([0, d3.max(data, function(d) { return d[country]; })]);
 
                 xAxis.call(d3.axisBottom(x));
-                yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".0s")));
+                yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
 
                 let path = svg.selectAll(".line").data([data]);
 
@@ -230,6 +260,365 @@
                 updateChart(this.value);
             });
         });
+
+
+
+        d3.csv("data/total_deaths.csv").then(data => {
+            // Parse the date values to a Date object
+            let parseDate = d3.timeParse("%Y-%m-%d");
+            data.forEach(function(d) {
+                d.date = parseDate(d.date);
+                for (let country in d) {
+                    if (country !== "date") d[country] = +d[country];
+                }
+            });
+
+            // Define the margins and dimensions of the graph
+            let margin = {top: 20, right: 20, bottom: 30, left: 75};
+            let width = 600 - margin.left - margin.right;
+            let height = 400 - margin.top - margin.bottom;
+
+            // Create the x and y scales
+            let x = d3.scaleTime().range([0, width]);
+            let y = d3.scaleLinear().range([height, 0]);
+
+            // Define the line
+            let valueline = d3.line()
+                .x(function(d) { return x(d.date); });
+
+            // Create the SVG 'g' element (a group element)
+            let svgDeath = d3.select("#deathSvg").append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Add the X Axis
+            let xAxis = svgDeath.append("g")
+                .attr("transform", "translate(0," + height + ")");
+
+            // Add the Y Axis
+            let yAxis = svgDeath.append("g")
+                .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
+
+            // Add the dropdown menu
+            let countries = data.columns.filter(c => c !== "date");
+            let dropdownDeath = d3.select("#countrySelectDeath");
+            dropdownDeath.selectAll("option")
+                .data(countries)
+                .enter()
+                .append("option")
+                .attr("value", d => d)
+                .text(d => d);
+
+            // Create a tooltip
+            let tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip");
+
+            // Tooltip functions
+            let mouseover = function(event, d) {
+                tooltip
+                    .style("opacity", 1)
+                    .html("Date: " + d3.timeFormat("%Y-%m-%d")(d.date) + "<br>" + "Deaths: " + d[dropdownDeath.node().value]);
+            }
+            let mousemove = function(event, d) {
+                tooltip
+                    .style("left", (event.pageX + 20) + "px")
+                    .style("top", (event.pageY) + "px");
+            }
+            let mouseout = function(d) {
+                tooltip
+                    .style("opacity", 0);
+            }
+
+            // Function to update the chart
+            function updateDeathChart(country) {
+                valueline.y(function(d) { return y(d[country]); });
+
+                x.domain(d3.extent(data, function(d) { return d.date; }));
+                y.domain([0, d3.max(data, function(d) { return d[country]; })]);
+
+                xAxis.call(d3.axisBottom(x));
+                yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
+
+                let path = svgDeath.selectAll(".line").data([data]);
+
+                path.enter().append("path")
+                    .attr("class", "line")
+                    .merge(path)
+                    .attr("fill", "none")
+                    .attr("stroke", "steelblue")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", valueline);
+
+                path.exit().remove();
+
+                // Remove existing dots before creating new ones
+                svgDeath.selectAll(".dot").remove();
+
+                let dots = svgDeath.selectAll(".dot")
+                    .data(data);
+
+                dots.enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", function(d) { return x(d.date) })
+                    .attr("cy", function(d) { return y(d[country]) })
+                    .attr("r", 5)
+                    .style("fill", "steelblue")
+                    .on("mouseover", mouseover)
+                    .on("mousemove", mousemove)
+                    .on("mouseout", mouseout);
+
+                svgDeath.selectAll("g.annotation").remove();
+
+            }
+
+            // Initialize with the first country
+            updateDeathChart(countries[0]);
+
+            // Update the chart when a new country is selected
+            dropdownDeath.on("change", function() {
+                updateDeathChart(this.value);
+            });
+        });
+
+
+
+
+
+        d3.csv("data/new_cases.csv").then(data => {
+            // Parse the date values to a Date object
+            let parseDate = d3.timeParse("%Y-%m-%d");
+            data.forEach(function(d) {
+                d.date = parseDate(d.date);
+                for (let country in d) {
+                    if (country !== "date") d[country] = +d[country];
+                }
+            });
+
+            // Define the margins and dimensions of the graph
+            let margin = {top: 20, right: 20, bottom: 30, left: 75};
+            let width = 600 - margin.left - margin.right;
+            let height = 400 - margin.top - margin.bottom;
+
+            // Create the x and y scales
+            let x = d3.scaleTime().range([0, width]);
+            let y = d3.scaleLinear().range([height, 0]);
+
+            // Define the line
+            let valueline = d3.line()
+                .x(function(d) { return x(d.date); });
+
+            // Create the SVG 'g' element (a group element)
+            let svgnewCase = d3.select("#newCaseSvg").append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Add the X Axis
+            let xAxis = svgnewCase.append("g")
+                .attr("transform", "translate(0," + height + ")");
+
+            // Add the Y Axis
+            let yAxis = svgnewCase.append("g")
+                .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
+
+            // Add the dropdown menu
+            let countries = data.columns.filter(c => c !== "date");
+            let dropdownnewCase = d3.select("#countrySelectNewCases");
+            dropdownnewCase.selectAll("option")
+                .data(countries)
+                .enter()
+                .append("option")
+                .attr("value", d => d)
+                .text(d => d);
+
+            // Create a tooltip
+            let tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip");
+
+            // Tooltip functions
+            let mouseover = function(event, d) {
+                tooltip
+                    .style("opacity", 1)
+                    .html("Date: " + d3.timeFormat("%Y-%m-%d")(d.date) + "<br>" + "newCases: " + d[dropdownnewCase.node().value]);
+            }
+            let mousemove = function(event, d) {
+                tooltip
+                    .style("left", (event.pageX + 20) + "px")
+                    .style("top", (event.pageY) + "px");
+            }
+            let mouseout = function(d) {
+                tooltip
+                    .style("opacity", 0);
+            }
+
+            // Function to update the chart
+            function updatenewCaseChart(country) {
+                valueline.y(function(d) { return y(d[country]); });
+
+                x.domain(d3.extent(data, function(d) { return d.date; }));
+                y.domain([0, d3.max(data, function(d) { return d[country]; })]);
+
+                xAxis.call(d3.axisBottom(x));
+                yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
+
+                let path = svgnewCase.selectAll(".line").data([data]);
+
+                path.enter().append("path")
+                    .attr("class", "line")
+                    .merge(path)
+                    .attr("fill", "none")
+                    .attr("stroke", "steelblue")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", valueline);
+
+                path.exit().remove();
+
+                // Remove existing dots before creating new ones
+                svgnewCase.selectAll(".dot").remove();
+
+                let dots = svgnewCase.selectAll(".dot")
+                    .data(data);
+
+                dots.enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", function(d) { return x(d.date) })
+                    .attr("cy", function(d) { return y(d[country]) })
+                    .attr("r", 5)
+                    .style("fill", "steelblue")
+                    .on("mouseover", mouseover)
+                    .on("mousemove", mousemove)
+                    .on("mouseout", mouseout);
+
+                svgnewCase.selectAll("g.annotation").remove();
+
+            }
+
+            // Initialize with the first country
+            updatenewCaseChart(countries[0]);
+
+            // Update the chart when a new country is selected
+            dropdownnewCase.on("change", function() {
+                updatenewCaseChart(this.value);
+            });
+        });
+
+
+ 
+
+        d3.csv("data/new_deaths.csv").then(data => {
+            // Parse the date values to a Date object
+            let parseDate = d3.timeParse("%Y-%m-%d");
+            data.forEach(function(d) {
+                d.date = parseDate(d.date);
+                for (let country in d) {
+                    if (country !== "date") d[country] = +d[country];
+                }
+            });
+
+            // Define the margins and dimensions of the graph
+            let margin = {top: 20, right: 20, bottom: 30, left: 75};
+            let width = 600 - margin.left - margin.right;
+            let height = 400 - margin.top - margin.bottom;
+
+            // Create the x and y scales
+            let x = d3.scaleTime().range([0, width]);
+            let y = d3.scaleLinear().range([height, 0]);
+
+            // Define the line
+            let valueline = d3.line()
+                .x(function(d) { return x(d.date); });
+
+            // Create the SVG 'g' element (a group element)
+            let svgnewDeath = d3.select("#newDeathSvg").append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Add the X Axis
+            let xAxis = svgnewDeath.append("g")
+                .attr("transform", "translate(0," + height + ")");
+
+            // Add the Y Axis
+            let yAxis = svgnewDeath.append("g")
+                .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
+
+            // Add the dropdown menu
+            let countries = data.columns.filter(c => c !== "date");
+            let dropdownnewDeath = d3.select("#countrySelectNewDeaths");
+            dropdownnewDeath.selectAll("option")
+                .data(countries)
+                .enter()
+                .append("option")
+                .attr("value", d => d)
+                .text(d => d);
+
+            // Create a tooltip
+            let tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip");
+
+            // Tooltip functions
+            let mouseover = function(event, d) {
+                tooltip
+                    .style("opacity", 1)
+                    .html("Date: " + d3.timeFormat("%Y-%m-%d")(d.date) + "<br>" + "newDeaths: " + d[dropdownnewDeath.node().value]);
+            }
+            let mousemove = function(event, d) {
+                tooltip
+                    .style("left", (event.pageX + 20) + "px")
+                    .style("top", (event.pageY) + "px");
+            }
+            let mouseout = function(d) {
+                tooltip
+                    .style("opacity", 0);
+            }
+
+            // Function to update the chart
+            function updatenewDeathChart(country) {
+                valueline.y(function(d) { return y(d[country]); });
+
+                x.domain(d3.extent(data, function(d) { return d.date; }));
+                y.domain([0, d3.max(data, function(d) { return d[country]; })]);
+
+                xAxis.call(d3.axisBottom(x));
+                yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
+
+                let path = svgnewDeath.selectAll(".line").data([data]);
+
+                path.enter().append("path")
+                    .attr("class", "line")
+                    .merge(path)
+                    .attr("fill", "none")
+                    .attr("stroke", "steelblue")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", valueline);
+
+                path.exit().remove();
+
+                // Remove existing dots before creating new ones
+                svgnewDeath.selectAll(".dot").remove();
+
+                let dots = svgnewDeath.selectAll(".dot")
+                    .data(data);
+
+                dots.enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", function(d) { return x(d.date) })
+                    .attr("cy", function(d) { return y(d[country]) })
+                    .attr("r", 5)
+                    .style("fill", "steelblue")
+                    .on("mouseover", mouseover)
+                    .on("mousemove", mousemove)
+                    .on("mouseout", mouseout);
+
+                svgnewDeath.selectAll("g.annotation").remove();
+
+            }
+
+            // Initialize with the first country
+            updatenewDeathChart(countries[0]);
+
+            // Update the chart when a new country is selected
+            dropdownnewDeath.on("change", function() {
+                updatenewDeathChart(this.value);
+            });
+        });     
+
     </script>
+
 </body>
 </html>
