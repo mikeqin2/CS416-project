@@ -91,7 +91,6 @@
     
     <script>
         d3.csv("data/total_cases.csv").then(data => {
-            // Parse the date values to a Date object
             let parseDate = d3.timeParse("%Y-%m-%d");
             data.forEach(function(d) {
                 d.date = parseDate(d.date);
@@ -100,32 +99,25 @@
                 }
             });
 
-            // Define the margins and dimensions of the graph
             let margin = {top: 20, right: 20, bottom: 30, left: 70};
             let width = 600 - margin.left - margin.right;
             let height = 400 - margin.top - margin.bottom;
 
-            // Create the x and y scales
             let x = d3.scaleTime().range([0, width]);
             let y = d3.scaleLinear().range([height, 0]);
 
-            // Define the line
             let valueline = d3.line()
                 .x(function(d) { return x(d.date); });
 
-            // Create the SVG 'g' element (a group element)
             let svg = d3.select("svg").append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            // Add the X Axis
             let xAxis = svg.append("g")
                 .attr("transform", "translate(0," + height + ")");
 
-            // Add the Y Axis
             let yAxis = svg.append("g")
                 .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
 
-            // Add the dropdown menu
             let countries = data.columns.filter(c => c !== "date");
             let dropdown = d3.select("#countrySelect");
             dropdown.selectAll("option")
@@ -135,27 +127,45 @@
                 .attr("value", d => d)
                 .text(d => d);
 
-            // Create a tooltip
             let tooltip = d3.select("body").append("div")
                 .attr("class", "tooltip");
 
-            // Tooltip functions
             let mouseover = function(event, d) {
                 tooltip
                     .style("opacity", 1)
                     .html("Date: " + d3.timeFormat("%Y-%m-%d")(d.date) + "<br>" + "Cases: " + d[dropdown.node().value]);
             }
+
             let mousemove = function(event, d) {
                 tooltip
                     .style("left", (event.pageX + 20) + "px")
                     .style("top", (event.pageY) + "px");
             }
+
             let mouseout = function(d) {
                 tooltip
                     .style("opacity", 0);
             }
 
-            // Function to update the chart
+            let zoom = d3.zoom()
+                .scaleExtent([1, 10])
+                .on("zoom", zoomed);
+
+            svg.call(zoom);
+
+            function zoomed(event) {
+                let transform = event.transform;
+
+                let newX = transform.rescaleX(x);
+                let newY = transform.rescaleY(y);
+
+                xAxis.call(d3.axisBottom(newX));
+                yAxis.call(d3.axisLeft(newY).tickFormat(d3.format(".2s")));
+
+                svg.selectAll(".line").attr("d", valueline.x(function(d) { return newX(d.date); }).y(function(d) { return newY(d[dropdown.node().value]); }));
+                svg.selectAll(".dot").attr("cx", function(d) { return newX(d.date); }).attr("cy", function(d) { return newY(d[dropdown.node().value]); });
+            }
+
             function updateChart(country) {
                 valueline.y(function(d) { return y(d[country]); });
 
@@ -177,7 +187,6 @@
 
                 path.exit().remove();
 
-                // Remove existing dots before creating new ones
                 svg.selectAll(".dot").remove();
 
                 let dots = svg.selectAll(".dot")
@@ -250,12 +259,12 @@
                         .attr("class", "annotation")
                         .call(makeAnnotations);
                 }
+
+                svg.call(zoom.transform, d3.zoomIdentity);
             }
 
-            // Initialize with the first country
             updateChart(countries[0]);
 
-            // Update the chart when a new country is selected
             dropdown.on("change", function() {
                 updateChart(this.value);
             });
@@ -263,8 +272,8 @@
 
 
 
+
         d3.csv("data/total_deaths.csv").then(data => {
-            // Parse the date values to a Date object
             let parseDate = d3.timeParse("%Y-%m-%d");
             data.forEach(function(d) {
                 d.date = parseDate(d.date);
@@ -273,32 +282,25 @@
                 }
             });
 
-            // Define the margins and dimensions of the graph
             let margin = {top: 20, right: 20, bottom: 30, left: 75};
             let width = 600 - margin.left - margin.right;
             let height = 400 - margin.top - margin.bottom;
 
-            // Create the x and y scales
             let x = d3.scaleTime().range([0, width]);
             let y = d3.scaleLinear().range([height, 0]);
 
-            // Define the line
             let valueline = d3.line()
                 .x(function(d) { return x(d.date); });
 
-            // Create the SVG 'g' element (a group element)
             let svgDeath = d3.select("#deathSvg").append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            // Add the X Axis
             let xAxis = svgDeath.append("g")
                 .attr("transform", "translate(0," + height + ")");
 
-            // Add the Y Axis
             let yAxis = svgDeath.append("g")
                 .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
 
-            // Add the dropdown menu
             let countries = data.columns.filter(c => c !== "date");
             let dropdownDeath = d3.select("#countrySelectDeath");
             dropdownDeath.selectAll("option")
@@ -308,27 +310,45 @@
                 .attr("value", d => d)
                 .text(d => d);
 
-            // Create a tooltip
             let tooltip = d3.select("body").append("div")
                 .attr("class", "tooltip");
 
-            // Tooltip functions
             let mouseover = function(event, d) {
                 tooltip
                     .style("opacity", 1)
                     .html("Date: " + d3.timeFormat("%Y-%m-%d")(d.date) + "<br>" + "Deaths: " + d[dropdownDeath.node().value]);
             }
+
             let mousemove = function(event, d) {
                 tooltip
                     .style("left", (event.pageX + 20) + "px")
                     .style("top", (event.pageY) + "px");
             }
+
             let mouseout = function(d) {
                 tooltip
                     .style("opacity", 0);
             }
 
-            // Function to update the chart
+            let zoom = d3.zoom()
+                .scaleExtent([1, 10])
+                .on("zoom", zoomed);
+
+            svgDeath.call(zoom);
+
+            function zoomed(event) {
+                let transform = event.transform;
+
+                let newX = transform.rescaleX(x);
+                let newY = transform.rescaleY(y);
+
+                xAxis.call(d3.axisBottom(newX));
+                yAxis.call(d3.axisLeft(newY).tickFormat(d3.format(".2s")));
+
+                svgDeath.selectAll(".line").attr("d", valueline.x(function(d) { return newX(d.date); }).y(function(d) { return newY(d[dropdownDeath.node().value]); }));
+                svgDeath.selectAll(".dot").attr("cx", function(d) { return newX(d.date); }).attr("cy", function(d) { return newY(d[dropdownDeath.node().value]); });
+            }
+
             function updateDeathChart(country) {
                 valueline.y(function(d) { return y(d[country]); });
 
@@ -350,7 +370,6 @@
 
                 path.exit().remove();
 
-                // Remove existing dots before creating new ones
                 svgDeath.selectAll(".dot").remove();
 
                 let dots = svgDeath.selectAll(".dot")
@@ -367,13 +386,11 @@
                     .on("mouseout", mouseout);
 
                 svgDeath.selectAll("g.annotation").remove();
-
+                svgDeath.call(zoom.transform, d3.zoomIdentity);
             }
 
-            // Initialize with the first country
             updateDeathChart(countries[0]);
 
-            // Update the chart when a new country is selected
             dropdownDeath.on("change", function() {
                 updateDeathChart(this.value);
             });
@@ -383,8 +400,9 @@
 
 
 
+
         d3.csv("data/new_cases.csv").then(data => {
-            // Parse the date values to a Date object
+
             let parseDate = d3.timeParse("%Y-%m-%d");
             data.forEach(function(d) {
                 d.date = parseDate(d.date);
@@ -393,32 +411,36 @@
                 }
             });
 
-            // Define the margins and dimensions of the graph
             let margin = {top: 20, right: 20, bottom: 30, left: 75};
             let width = 600 - margin.left - margin.right;
             let height = 400 - margin.top - margin.bottom;
 
-            // Create the x and y scales
             let x = d3.scaleTime().range([0, width]);
             let y = d3.scaleLinear().range([height, 0]);
 
-            // Define the line
             let valueline = d3.line()
                 .x(function(d) { return x(d.date); });
 
-            // Create the SVG 'g' element (a group element)
             let svgnewCase = d3.select("#newCaseSvg").append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            // Add the X Axis
             let xAxis = svgnewCase.append("g")
                 .attr("transform", "translate(0," + height + ")");
 
-            // Add the Y Axis
             let yAxis = svgnewCase.append("g")
                 .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
 
-            // Add the dropdown menu
+            svgnewCase.append("defs").append("svg:clipPath")
+                .attr("id", "clip")
+                .append("svg:rect")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("x", 0)
+                .attr("y", 0);
+
+            let clip = svgnewCase.append('g')
+                .attr("clip-path", "url(#clip)");
+
             let countries = data.columns.filter(c => c !== "date");
             let dropdownnewCase = d3.select("#countrySelectNewCases");
             dropdownnewCase.selectAll("option")
@@ -428,11 +450,9 @@
                 .attr("value", d => d)
                 .text(d => d);
 
-            // Create a tooltip
             let tooltip = d3.select("body").append("div")
                 .attr("class", "tooltip");
 
-            // Tooltip functions
             let mouseover = function(event, d) {
                 tooltip
                     .style("opacity", 1)
@@ -448,7 +468,19 @@
                     .style("opacity", 0);
             }
 
-            // Function to update the chart
+            let zoom = d3.zoom()
+                .scaleExtent([.5, 20]) 
+                .extent([[0, 0], [width, height]])
+                .on("zoom", updateChart);
+
+            svgnewCase.append("rect")
+                .attr("width", width)
+                .attr("height", height)
+                .style("fill", "none")
+                .style("pointer-events", "all")
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+                .call(zoom);
+
             function updatenewCaseChart(country) {
                 valueline.y(function(d) { return y(d[country]); });
 
@@ -470,7 +502,6 @@
 
                 path.exit().remove();
 
-                // Remove existing dots before creating new ones
                 svgnewCase.selectAll(".dot").remove();
 
                 let dots = svgnewCase.selectAll(".dot")
@@ -487,23 +518,29 @@
                     .on("mouseout", mouseout);
 
                 svgnewCase.selectAll("g.annotation").remove();
-
             }
 
-            // Initialize with the first country
+            function updateChart(event) {
+                var newX = event.transform.rescaleX(x);
+                xAxis.call(d3.axisBottom(newX));
+                svgnewCase.selectAll(".line")
+                    .attr('d', valueline.x(function(d) {return newX(d.date)}));
+                svgnewCase.selectAll(".dot")
+                    .attr("cx", function(d) { return newX(d.date); });
+            }
+
             updatenewCaseChart(countries[0]);
 
-            // Update the chart when a new country is selected
             dropdownnewCase.on("change", function() {
                 updatenewCaseChart(this.value);
             });
         });
 
 
- 
 
+ 
         d3.csv("data/new_deaths.csv").then(data => {
-            // Parse the date values to a Date object
+
             let parseDate = d3.timeParse("%Y-%m-%d");
             data.forEach(function(d) {
                 d.date = parseDate(d.date);
@@ -512,32 +549,25 @@
                 }
             });
 
-            // Define the margins and dimensions of the graph
             let margin = {top: 20, right: 20, bottom: 30, left: 75};
             let width = 600 - margin.left - margin.right;
             let height = 400 - margin.top - margin.bottom;
 
-            // Create the x and y scales
             let x = d3.scaleTime().range([0, width]);
             let y = d3.scaleLinear().range([height, 0]);
 
-            // Define the line
             let valueline = d3.line()
                 .x(function(d) { return x(d.date); });
 
-            // Create the SVG 'g' element (a group element)
             let svgnewDeath = d3.select("#newDeathSvg").append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            // Add the X Axis
             let xAxis = svgnewDeath.append("g")
                 .attr("transform", "translate(0," + height + ")");
 
-            // Add the Y Axis
             let yAxis = svgnewDeath.append("g")
                 .call(d3.axisLeft(y).tickFormat(d3.format(".2s")));
 
-            // Add the dropdown menu
             let countries = data.columns.filter(c => c !== "date");
             let dropdownnewDeath = d3.select("#countrySelectNewDeaths");
             dropdownnewDeath.selectAll("option")
@@ -547,11 +577,9 @@
                 .attr("value", d => d)
                 .text(d => d);
 
-            // Create a tooltip
             let tooltip = d3.select("body").append("div")
                 .attr("class", "tooltip");
 
-            // Tooltip functions
             let mouseover = function(event, d) {
                 tooltip
                     .style("opacity", 1)
@@ -567,7 +595,25 @@
                     .style("opacity", 0);
             }
 
-            // Function to update the chart
+            svgnewDeath.append("defs").append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                .attr("width", width)
+                .attr("height", height);
+
+            let zoom = d3.zoom()
+                .scaleExtent([1, Infinity])
+                .translateExtent([[0, 0], [width, height]])
+                .extent([[0, 0], [width, height]])
+                .on("zoom", zoomed);
+
+            svgnewDeath.append("rect")
+                .attr("width", width)
+                .attr("height", height)
+                .style("fill", "none")
+                .style("pointer-events", "all")
+                .call(zoom);
+
             function updatenewDeathChart(country) {
                 valueline.y(function(d) { return y(d[country]); });
 
@@ -585,11 +631,11 @@
                     .attr("fill", "none")
                     .attr("stroke", "steelblue")
                     .attr("stroke-width", 1.5)
-                    .attr("d", valueline);
+                    .attr("d", valueline)
+                    .attr("clip-path", "url(#clip)");
 
                 path.exit().remove();
 
-                // Remove existing dots before creating new ones
                 svgnewDeath.selectAll(".dot").remove();
 
                 let dots = svgnewDeath.selectAll(".dot")
@@ -603,20 +649,28 @@
                     .style("fill", "steelblue")
                     .on("mouseover", mouseover)
                     .on("mousemove", mousemove)
-                    .on("mouseout", mouseout);
+                    .on("mouseout", mouseout)
+                    .attr("clip-path", "url(#clip)");
 
                 svgnewDeath.selectAll("g.annotation").remove();
-
             }
 
-            // Initialize with the first country
+            function zoomed({transform}) {
+                let newX = transform.rescaleX(x);
+                xAxis.call(d3.axisBottom(newX));
+                svgnewDeath.selectAll(".line")
+                    .attr('d', valueline.x(function(d) { return newX(d.date) }));
+                svgnewDeath.selectAll(".dot")
+                    .attr('cx', function(d) { return newX(d.date) });
+            }
+
             updatenewDeathChart(countries[0]);
 
-            // Update the chart when a new country is selected
             dropdownnewDeath.on("change", function() {
                 updatenewDeathChart(this.value);
             });
-        });     
+        });
+  
 
     </script>
 
